@@ -1,0 +1,18 @@
+# Hugging Face Ignore File
+.git/
+.github/
+backend/.venv/
+backend/.deer-flow/
+backend/tests/
+frontend/node_modules/
+frontend/.next/
+logs/
+*.log
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.DS_Store
+.env
+config.yaml
+extensions_config.json
+mcp_config.json

@@ -1,3 +1,12 @@
+---
+title: DeerFlow
+emoji: 🦌
+colorFrom: green
+colorTo: blue
+sdk: docker
+app_port: 7860
+---
+
 # 🦌 DeerFlow - 2.0
 
 DeerFlow (**D**eep **E**xploration and **E**fficient **R**esearch **Flow**) is an open-source **super agent harness** that orchestrates **sub-agents**, **memory**, and **sandboxes** to do almost anything — powered by **extensible skills**.
