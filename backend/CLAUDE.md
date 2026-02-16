@@ -323,6 +323,20 @@ The frontend uses environment variables to connect to backend services:
 
 When using `make dev` from root, the frontend automatically connects through nginx.
 
+### Hugging Face Deployment
+
+The application is configured for deployment to Hugging Face Spaces using the Docker SDK.
+
+**Key Components**:
+- **Dockerfile**: Root multi-stage build (Node.js + Python + Nginx).
+- **Nginx Config**: `docker/nginx/nginx.hf.conf` (listens on port 7860).
+- **Startup Script**: `scripts/start-hf.sh` (initializes services and health checks).
+- **Sync Workflow**: `.github/workflows/hf_sync.yml` (automated deployment).
+
+**Verification**:
+- Health check endpoint: `GET /health` (proxied to Gateway API).
+- Space URL: `https://{hf_profile}-{hf_space}.hf.space`.
+
 ## Key Features
 
 ### File Upload

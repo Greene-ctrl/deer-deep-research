@@ -6,16 +6,18 @@ WORKDIR /app/frontend
 RUN corepack enable && corepack install -g pnpm@10.26.2
 
 # Copy package files
-COPY frontend/package.json frontend/pnpm-lock.yaml ./
+COPY ./frontend/package.json ./frontend/pnpm-lock.yaml ./
 
 # Install dependencies
 RUN pnpm install --frozen-lockfile
 
 # Copy frontend source
-COPY frontend ./
+COPY ./frontend ./
 
 # Build the frontend. NEXT_PUBLIC_API_URL should be /api for the proxy to work.
-ENV NEXT_PUBLIC_API_URL=/api
+# SKIP_ENV_VALIDATION=1 is needed to bypass environment variable checks during build.
+ENV NEXT_PUBLIC_API_URL=/api \
+    SKIP_ENV_VALIDATION=1
 RUN pnpm run build
 
 # Stage 2: Final image
@@ -25,7 +27,8 @@ FROM python:3.12-slim
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PATH="/home/user/.local/bin:$PATH" \
-    DEER_FLOW_CONFIG_PATH="/home/user/app/config.yaml"
+    DEER_FLOW_CONFIG_PATH="/home/user/app/config.yaml" \
+    SKIP_ENV_VALIDATION=1
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -53,7 +56,7 @@ WORKDIR /home/user/app
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # Copy backend
-COPY --chown=user:user backend ./backend
+COPY --chown=user:user ./backend ./backend
 # Install backend dependencies
 RUN cd backend && uv sync
 
@@ -63,16 +66,18 @@ COPY --from=frontend-builder --chown=user:user /app/frontend/public ./frontend/p
 COPY --from=frontend-builder --chown=user:user /app/frontend/package.json ./frontend/package.json
 COPY --from=frontend-builder --chown=user:user /app/frontend/pnpm-lock.yaml ./frontend/pnpm-lock.yaml
 COPY --from=frontend-builder --chown=user:user /app/frontend/next.config.js ./frontend/next.config.js
+# next.config.js imports src/env.js
+COPY --from=frontend-builder --chown=user:user /app/frontend/src/env.js ./frontend/src/env.js
 
 # Install production dependencies for frontend
 RUN cd frontend && pnpm install --prod --frozen-lockfile
 
 # Copy other necessary files
-COPY --chown=user:user config.example.yaml ./config.yaml
-COPY --chown=user:user .env.example ./.env
-COPY --chown=user:user skills ./skills
-COPY --chown=user:user scripts ./scripts
-COPY --chown=user:user docker/nginx/nginx.hf.conf ./nginx.conf
+COPY --chown=user:user ./config.example.yaml ./config.yaml
+COPY --chown=user:user ./.env.example ./.env
+COPY --chown=user:user ./skills ./skills
+COPY --chown=user:user ./scripts ./scripts
+COPY --chown=user:user ./docker/nginx/nginx.hf.conf ./nginx.conf
 
 # Create logs directory
 RUN mkdir -p /home/user/app/logs
