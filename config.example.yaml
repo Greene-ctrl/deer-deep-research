@@ -13,6 +13,27 @@
 # Configure available LLM models for the agent to use
 
 models:
+  # Blablador models (Default)
+  - name: blablador-large
+    display_name: Blablador Large
+    use: langchain_openai:ChatOpenAI
+    model: alias-large
+    base_url: https://api.helmholtz-blablador.fz-juelich.de/v1
+    api_key: $BLABLADOR_API_KEY
+    max_tokens: 4096
+    temperature: 0.7
+    supports_vision: false
+
+  - name: blablador-fast
+    display_name: Blablador Fast
+    use: langchain_openai:ChatOpenAI
+    model: alias-fast
+    base_url: https://api.helmholtz-blablador.fz-juelich.de/v1
+    api_key: $BLABLADOR_API_KEY
+    max_tokens: 4096
+    temperature: 0.1
+    supports_vision: false
+
   # Example: OpenAI model
   - name: gpt-4
     display_name: GPT-4
@@ -217,7 +238,7 @@ title:
   enabled: true
   max_words: 6
   max_chars: 60
-  model_name: null # Use default model (first model in models list)
+  model_name: blablador-fast # Use fast model for utility tasks
 
 # ============================================================================
 # Summarization Configuration
@@ -230,7 +251,7 @@ summarization:
 
   # Model to use for summarization (null = use default model)
   # Recommended: Use a lightweight, cost-effective model like "gpt-4o-mini" or similar
-  model_name: null
+  model_name: blablador-fast
 
   # Trigger conditions - at least one required
   # Summarization runs when ANY threshold is met (OR logic)
@@ -298,7 +319,7 @@ memory:
   enabled: true
   storage_path: .deer-flow/memory.json # Path relative to backend directory
   debounce_seconds: 30 # Wait time before processing queued updates
-  model_name: null # Use default model
+  model_name: blablador-fast # Use fast model for memory extraction
   max_facts: 100 # Maximum number of facts to store
   fact_confidence_threshold: 0.7 # Minimum confidence for storing facts
   injection_enabled: true # Whether to inject memory into system prompt
