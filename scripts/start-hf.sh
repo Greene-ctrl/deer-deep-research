@@ -6,6 +6,9 @@ APP_ROOT="/home/user/app"
 echo "Listing files in APP_ROOT:"
 ls -F "${APP_ROOT}"
 
+echo "Deep listing of backend/src/gateway/routers:"
+ls -R "${APP_ROOT}/backend/src/gateway/routers"
+
 # Initialize config files if they don't exist
 if [ ! -f "${APP_ROOT}/config.yaml" ]; then
     echo "Creating config.yaml from example..."
@@ -31,10 +34,9 @@ cd "${APP_ROOT}/backend" && /home/user/.local/bin/uv run uvicorn src.gateway.app
 # Start Frontend
 echo "Starting Frontend..."
 cd "${APP_ROOT}/frontend"
-# Use npx next start directly to avoid pnpm argument passing issues
 npx next start -p 3000 -H 127.0.0.1 > "${APP_ROOT}/logs/frontend.log" 2>&1 &
 
-# Wait for services to start with a health check loop
+# Wait for services to start
 echo "Waiting for services to initialize..."
 for i in {1..60}; do
     GW_UP=0
@@ -47,10 +49,6 @@ for i in {1..60}; do
         break
     fi
     echo "Waiting for services... GW=$GW_UP, FE=$FE_UP ($i/60)"
-    if [ $i -gt 20 ] && [ $FE_UP -eq 0 ]; then
-        echo "Frontend log tail (last 10 lines):"
-        tail -n 10 "${APP_ROOT}/logs/frontend.log"
-    fi
     sleep 2
 done
 

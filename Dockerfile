@@ -28,7 +28,9 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PATH="/home/user/.local/bin:$PATH" \
     DEER_FLOW_CONFIG_PATH="/home/user/app/config.yaml" \
-    SKIP_ENV_VALIDATION=1
+    SKIP_ENV_VALIDATION=1 \
+    BETTER_AUTH_SECRET="deer-flow-secret-12345" \
+    BETTER_AUTH_URL="https://auxteam-deerflow.hf.space"
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \

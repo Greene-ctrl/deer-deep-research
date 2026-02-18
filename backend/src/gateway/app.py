@@ -5,7 +5,16 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from src.gateway.config import get_gateway_config
-from src.gateway.routers import artifacts, mcp, memory, models, skills, uploads
+from src.gateway.routers import (
+    artifacts,
+    chat,
+    mcp,
+    memory,
+    models,
+    settings,
+    skills,
+    uploads,
+)
 
 # Configure logging
 logging.basicConfig(
@@ -51,6 +60,8 @@ API Gateway for DeerFlow - A LangGraph-based AI agent backend with sandbox execu
 - **Models Management**: Query and retrieve available AI models
 - **MCP Configuration**: Manage Model Context Protocol (MCP) server configurations
 - **Memory Management**: Access and manage global memory data for personalized conversations
+- **Chat**: Simplified messaging interface with the agent
+- **Settings**: Manage application configuration (config.yaml)
 - **Skills Management**: Query and manage skills and their enabled status
 - **Artifacts**: Access thread artifacts and generated files
 - **Health Monitoring**: System health check endpoints
@@ -91,6 +102,14 @@ This gateway provides custom endpoints for models, MCP configuration, skills, an
                 "description": "Upload and manage user files for threads",
             },
             {
+                "name": "chat",
+                "description": "Simplified messaging interface with the agent",
+            },
+            {
+                "name": "settings",
+                "description": "Manage application configuration (config.yaml)",
+            },
+            {
                 "name": "health",
                 "description": "Health check and system status endpoints",
             },
@@ -117,6 +136,12 @@ This gateway provides custom endpoints for models, MCP configuration, skills, an
 
     # Uploads API is mounted at /api/threads/{thread_id}/uploads
     app.include_router(uploads.router)
+
+    # Chat API is mounted at /api/chat
+    app.include_router(chat.router)
+
+    # Settings API is mounted at /api/settings
+    app.include_router(settings.router)
 
     @app.get("/health", tags=["health"])
     async def health_check() -> dict:
