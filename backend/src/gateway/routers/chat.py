@@ -1,7 +1,7 @@
 import json
 import logging
 import uuid
-from typing import Any, Optional
+from typing import Any, List, Optional
 
 import httpx
 from fastapi import APIRouter, HTTPException, Request
@@ -24,6 +24,8 @@ class ChatRequest(BaseModel):
     thinking_enabled: bool = Field(True, description="Enable thinking mode")
     is_plan_mode: bool = Field(False, description="Enable plan mode")
     subagent_enabled: bool = Field(False, description="Enable subagent delegation")
+    recursion_limit: int = Field(100, description="Max recursion limit for the graph")
+    stream_mode: List[str] = Field(default_factory=lambda: ["values", "updates", "messages"], description="LangGraph stream modes")
 
 async def get_assistant_id(client: httpx.AsyncClient) -> str:
     """Find the assistant ID for 'lead_agent'."""
@@ -36,7 +38,6 @@ async def get_assistant_id(client: httpx.AsyncClient) -> str:
             if asst.get("graph_id") == "lead_agent" or asst.get("name") == "lead_agent":
                 return asst["assistant_id"]
 
-        # If no assistants exist, create one from graph_id
         resp = await client.post(f"{LANGGRAPH_URL}/assistants", json={"graph_id": "lead_agent", "name": "lead_agent"})
         resp.raise_for_status()
         asst = resp.json()
@@ -49,7 +50,6 @@ async def get_assistant_id(client: httpx.AsyncClient) -> str:
 async def chat(chat_req: ChatRequest):
     thread_id = chat_req.thread_id
 
-    # 1. Thread and Assistant preparation
     try:
         async with httpx.AsyncClient(timeout=30) as client:
             if not thread_id:
@@ -63,13 +63,11 @@ async def chat(chat_req: ChatRequest):
         logger.error(f"Preparation failed: {e}")
         raise HTTPException(status_code=500, detail=f"Preparation failed: {e!s}")
 
-    # Validate assistant_id
     try:
         uuid.UUID(assistant_id)
     except:
         raise HTTPException(status_code=500, detail=f"Invalid assistant_id found: {assistant_id}")
 
-    # 2. Prepare Payload
     configurable = {
         "thread_id": thread_id,
         "model_name": chat_req.model_name,
@@ -82,15 +80,17 @@ async def chat(chat_req: ChatRequest):
     payload = {
         "assistant_id": assistant_id,
         "input": {"messages": [{"role": "user", "content": chat_req.message}]},
-        "config": {"configurable": configurable},
+        "config": {
+            "configurable": configurable,
+            "recursion_limit": chat_req.recursion_limit
+        },
     }
 
-    # 3. Handle Streaming or Waiting
     if chat_req.stream:
-        payload["stream_mode"] = ["values"]
+        # User requested streaming
+        payload["stream_mode"] = chat_req.stream_mode
 
         async def event_generator():
-            # Create a dedicated client for the stream
             async with httpx.AsyncClient(timeout=600) as stream_client:
                 try:
                     async with stream_client.stream(
@@ -113,6 +113,7 @@ async def chat(chat_req: ChatRequest):
 
         return StreamingResponse(event_generator(), media_type="text/event-stream")
     else:
+        # Non-streaming
         try:
             async with httpx.AsyncClient(timeout=600) as wait_client:
                 resp = await wait_client.post(

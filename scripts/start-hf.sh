@@ -23,6 +23,22 @@ fi
 # Ensure logs directory exists
 mkdir -p "${APP_ROOT}/logs"
 
+# Debugging environment variables
+echo "--- Environment Variable Check ---"
+if [ -z "${BLABLADOR_API_KEY}" ]; then
+    echo "WARNING: BLABLADOR_API_KEY is NOT set in environment."
+else
+    # Show first and last 2 chars for verification without leaking
+    echo "BLABLADOR_API_KEY is set (Length: ${#BLABLADOR_API_KEY}, Value: ${BLABLADOR_API_KEY:0:2}...${BLABLADOR_API_KEY: -2})"
+fi
+
+if [ -z "${HF_TOKEN}" ]; then
+    echo "INFO: HF_TOKEN is NOT set in environment (optional for runtime)."
+else
+    echo "HF_TOKEN is set."
+fi
+echo "----------------------------------"
+
 # Start LangGraph server
 echo "Starting LangGraph server..."
 cd "${APP_ROOT}/backend" && /home/user/.local/bin/uv run langgraph dev --no-browser --allow-blocking --host 127.0.0.1 --port 2024 > "${APP_ROOT}/logs/langgraph.log" 2>&1 &

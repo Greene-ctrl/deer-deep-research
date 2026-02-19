@@ -22,12 +22,20 @@ def create_chat_model(name: str | None = None, thinking_enabled: bool = False, *
     if model_config is None:
         raise ValueError(f"Model {name} not found in config") from None
 
-    # FALLBACK FOR DEPLOYMENT VERIFICATION: Use a mock if no API key is set
+    # DEBUG: Recognition of API Keys
     import os
     is_blablador = "blablador" in model_config.name or (model_config.base_url and "blablador" in model_config.base_url)
-    if is_blablador and not os.environ.get("BLABLADOR_API_KEY") and model_config.api_key == "$BLABLADOR_API_KEY":
-        from langchain_community.chat_models import FakeListChatModel
-        return FakeListChatModel(responses=["Hello! I am a DeerFlow agent running in a Hugging Face Space. To enable real LLM responses, please set the BLABLADOR_API_KEY secret in the Space settings."])
+    env_key = os.environ.get("BLABLADOR_API_KEY")
+
+    if is_blablador:
+        if env_key:
+            print(f"DEBUG: BLABLADOR_API_KEY recognized in environment (starts with {env_key[:2]}...)")
+        else:
+            print(f"DEBUG: BLABLADOR_API_KEY NOT found in environment.")
+            if model_config.api_key == "$BLABLADOR_API_KEY":
+                print(f"WARNING: Using Fake model fallback for {name} due to missing BLABLADOR_API_KEY")
+                from langchain_community.chat_models import FakeListChatModel
+                return FakeListChatModel(responses=["Hello! I am a DeerFlow agent running in a Hugging Face Space. To enable real LLM responses, please set the BLABLADOR_API_KEY secret in the Space settings."])
 
     model_class = resolve_class(model_config.use, BaseChatModel)
 
