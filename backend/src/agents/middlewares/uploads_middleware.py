@@ -154,7 +154,28 @@ class UploadsMiddleware(AgentMiddleware[UploadsMiddlewareState]):
 
         logger = logging.getLogger(__name__)
 
-        thread_id = runtime.context.get("thread_id")
+        # Try multiple ways to get the thread_id
+        thread_id = None
+
+        # 1. Try runtime.context
+        try:
+            if runtime and hasattr(runtime, "context") and runtime.context is not None:
+                if hasattr(runtime.context, "get"):
+                    thread_id = runtime.context.get("thread_id")
+                elif isinstance(runtime.context, dict):
+                    thread_id = runtime.context.get("thread_id")
+        except Exception as e:
+            logger.debug(f"Error extracting thread_id from context in UploadsMiddleware: {e}")
+
+        # 2. Try runtime.config
+        try:
+            if thread_id is None and runtime and hasattr(runtime, "config") and runtime.config is not None:
+                configurable = runtime.config.get("configurable") if hasattr(runtime.config, "get") else None
+                if configurable and hasattr(configurable, "get"):
+                    thread_id = configurable.get("thread_id")
+        except Exception as e:
+            logger.debug(f"Error extracting thread_id from config in UploadsMiddleware: {e}")
+
         if thread_id is None:
             return None
 

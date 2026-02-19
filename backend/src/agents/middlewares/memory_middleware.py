@@ -78,9 +78,30 @@ class MemoryMiddleware(AgentMiddleware[MemoryMiddlewareState]):
             return None
 
         # Get thread ID from runtime context
-        thread_id = runtime.context.get("thread_id")
+        # Try multiple ways to get the thread_id
+        thread_id = None
+
+        # 1. Try runtime.context
+        try:
+            if runtime and hasattr(runtime, "context") and runtime.context is not None:
+                if hasattr(runtime.context, "get"):
+                    thread_id = runtime.context.get("thread_id")
+                elif isinstance(runtime.context, dict):
+                    thread_id = runtime.context.get("thread_id")
+        except Exception as e:
+            print(f"MemoryMiddleware: Error extracting thread_id from context: {e}")
+
+        # 2. Try runtime.config
+        try:
+            if thread_id is None and runtime and hasattr(runtime, "config") and runtime.config is not None:
+                configurable = runtime.config.get("configurable") if hasattr(runtime.config, "get") else None
+                if configurable and hasattr(configurable, "get"):
+                    thread_id = configurable.get("thread_id")
+        except Exception as e:
+            print(f"MemoryMiddleware: Error extracting thread_id from config: {e}")
+
         if not thread_id:
-            print("MemoryMiddleware: No thread_id in context, skipping memory update")
+            print("MemoryMiddleware: No thread_id in context or config, skipping memory update")
             return None
 
         # Get messages from state
