@@ -14,6 +14,7 @@ from src.gateway.routers import (
     settings,
     skills,
     uploads,
+    debug,
 )
 
 # Configure logging
@@ -142,6 +143,9 @@ This gateway provides custom endpoints for models, MCP configuration, skills, an
 
     # Settings API is mounted at /api/settings
     app.include_router(settings.router)
+
+    # Debug API
+    app.include_router(debug.router)
 
     @app.get("/health", tags=["health"])
     async def health_check() -> dict:

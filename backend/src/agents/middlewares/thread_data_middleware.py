@@ -48,12 +48,23 @@ class ThreadDataMiddleware(AgentMiddleware[ThreadDataMiddlewareState]):
         thread_id = None
 
         # 1. Try runtime.context
-        if hasattr(runtime, "context") and runtime.context:
-            thread_id = runtime.context.get("thread_id")
+        try:
+            if runtime and hasattr(runtime, "context") and runtime.context is not None:
+                if hasattr(runtime.context, "get"):
+                    thread_id = runtime.context.get("thread_id")
+                elif isinstance(runtime.context, dict):
+                    thread_id = runtime.context.get("thread_id")
+        except Exception as e:
+            logger.debug(f"Error extracting thread_id from context: {e}")
 
         # 2. Try runtime.config
-        if thread_id is None and hasattr(runtime, "config") and runtime.config:
-            thread_id = runtime.config.get("configurable", {}).get("thread_id")
+        try:
+            if thread_id is None and runtime and hasattr(runtime, "config") and runtime.config is not None:
+                configurable = runtime.config.get("configurable") if hasattr(runtime.config, "get") else None
+                if configurable and hasattr(configurable, "get"):
+                    thread_id = configurable.get("thread_id")
+        except Exception as e:
+            logger.debug(f"Error extracting thread_id from config: {e}")
 
         if thread_id is None:
             logger.warning(f"Thread ID not found in context or config. Runtime keys: {dir(runtime)}")
